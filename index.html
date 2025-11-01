@@ -10,8 +10,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Iconos (Lucide) - CORREGIDO (integrity) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.378.0/lucide.min.js" xintegrity="sha512-2qS1SRes2/mI1s1rOBT/izs8+tgUl1833+u/G/lYEMRtAFB2JNoV/tFIGbOGSSItPj90o3aYJ6Hi2/2/c3Pq/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <!-- Iconos (Lucide) - CORREGIDO (URL correcta de JSdelivr) -->
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.378.0/dist/umd/lucide.min.js"></script>
 
     <style>
         body {
@@ -35,7 +35,7 @@
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen p-4 md:p-8">
-    <div class="max-w-4xl mx-auto">
+    <div class="max-w-4xl mx.auto">
 
         <!-- Título -->
         <header class="text-center mb-8">
@@ -411,82 +411,5 @@ El usuario te dará una prenda específica que quiere usar y una lista completa 
 Tu tarea es:
 1.  Usar tu conocimiento de búsqueda (Google Search) para identificar las tendencias de moda MÁS actuales (temporada actual) relacionadas con la prenda seleccionada.
 2.  Filtrar estas tendencias para que se adapten PERFECTAMENTE al perfil de Gi (Colorimetría Verano Frío, altura, tipo de cuerpo).
-3.  Crear 2 outfits completos y detallados usando ÚNICAMENTE prendas de la lista del armario proporcionada.
-4.  Para cada outfit, explica por qué está en tendencia Y por qué le favorece específicamente a Gi (ej: 'este color resalta tu paleta de Verano Frío', 'este corte vertical te favorece por tu altura').
-5.  Debes ser entusiasta, profesional y dar consejos prácticos y empoderadores.
-6.  Responde en español.
-7.  Formatea tu respuesta claramente, usando <strong> para los títulos de los outfits (Ej: <strong>Outfit 1: Casual Chic</strong>) y párrafos <p> para la descripción.
-            `;
-            
-            const userQuery = `
-Prenda seleccionada: ${selectedItem.name} (Tipo: ${selectedItem.type}, Etiquetas: ${selectedItem.tags})
-
-Mi Armario Completo:
-${wardrobeListString}
-
-Por favor, crea 2 outfits para mí basados en las tendencias actuales.
-            `;
-
-            // CAMBIO: Llamar a nuestra nueva función de Vercel
-            try {
-                // Ya no usamos callGeminiAPI, usamos nuestra propia función
-                const result = await callVercelAPI(systemPrompt, userQuery);
-                
-                if (result.text) {
-                    resultsContainer.innerHTML = result.text;
-                } else {
-                    resultsContainer.innerHTML = '<p>Lo siento, no pude generar recomendaciones. Inténtalo de nuevo.</p>';
-                }
-                
-                if (result.sources && result.sources.length > 0) {
-                    sourcesContainer.classList.remove('hidden');
-                    result.sources.forEach(source => {
-                        const li = document.createElement('li');
-                        li.innerHTML = `<a href="${source.uri}" target="_blank" class="text-blue-500 hover:underline">${source.title}</a>`;
-                        sourcesList.appendChild(li);
-                    });
-                }
-
-            } catch (error) {
-                console.error("Error calling Vercel API:", error);
-                resultsContainer.innerHTML = `<p>Error al contactar al estilista AI: ${error.message}</p>`;
-            } finally {
-                setLoading(false);
-            }
-        }
-        
-        function setLoading(isLoading) {
-            if (isLoading) {
-                generateButton.disabled = true;
-                buttonText.classList.add('hidden');
-                buttonSpinner.classList.remove('hidden');
-            } else {
-                generateButton.disabled = false;
-                buttonText.classList.remove('hidden');
-                buttonSpinner.classList.add('hidden');
-            }
-        }
-
-        // --- Inicialización ---
-
-        // Corregir el typo de 'xintegrity' a 'integrity'
-        // El script de Lucide ya está corregido en el <head>
-
-        initializeAppAndAuth();
-        
-        /* Cargar iconos estáticos de Lucide DESPUÉS de que toda la página se haya cargado */
-        window.addEventListener('load', () => {
-            console.log('Evento window.load disparado.');
-            if (typeof lucide !== 'undefined' && lucide.createIcons) {
-                console.log('Lucide está definido, llamando a createIcons().');
-                lucide.createIcons();
-                console.log('Iconos Lucide cargados correctamente.');
-            } else {
-                console.error('Error Crítico: No se pudo cargar la librería de iconos Lucide (en window.load). El objeto "lucide" no está definido.');
-            }
-        });
-
-    </script>
-</body>
-</html>
+3.  Crear 2 outfits completos y detallados usando ÚNICAMENTE prendas de la lista del
 
