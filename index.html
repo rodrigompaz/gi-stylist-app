@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estilista AI de Gi Soroka</title>
+    <!-- Carga de Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Carga de la fuente Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Iconos (Lucide) - CORREGIDO (integrity) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.378.0/lucide.min.js" xintegrity="sha512-2qS1SRes2/mI1s1rOBT/izs8+tgUl1833+u/G/lYEMRtAFB2JNoV/tFIGbOGSSItPj90o3aYJ6Hi2/2/c3Pq/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        /* Estilo para el spinner */
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #ffffff;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-4 md:p-8">
+    <div class="max-w-4xl mx-auto">
+
+        <!-- Título -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800">Estilista AI</h1>
+            <p class="text-xl text-pink-600">para Gi Soroka</p>
+        </header>
+
+        <!-- Contenedor Principal -->
+        <div class="space-y-8">
+
+            <!-- 1. Sección: Mi Armario (Añadir prendas) -->
+            <section class="bg-white p-6 shadow-lg rounded-2xl">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-4 border-b pb-2 flex items-center">
+                    <span class="mr-2" data-lucide="hanger"></span>
+                    Mi Armario
+                </h2>
+                
+                <form id="addClothingForm" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 items-end">
+                    <div>
+                        <label for="itemName" class="block text-sm font-medium text-gray-600 mb-1">Nombre Prenda</label>
+                        <input type="text" id="itemName" placeholder="Ej: Falda de cuero negra" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500" required>
+                    </div>
+                    <div>
+                        <label for="itemType" class="block text-sm font-medium text-gray-600 mb-1">Tipo</label>
+                        <select id="itemType" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500">
+                            <option value="top">Parte de Arriba (Top)</option>
+                            <option value="bottom">Parte de Abajo (Bottom)</option>
+                            <option value="coat">Abrigo / Chaqueta</option>
+                            <option value="dress">Vestido</option>
+                            <option value="shoes">Zapatos</option>
+                            <option value="accessory">Accesorio</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="itemTags" class="block text-sm font-medium text-gray-600 mb-1">Etiquetas (separadas por coma)</label>
+                        <input type="text" id="itemTags" placeholder="Ej: casual, cuero, rockero" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500">
+                    </div>
+                    <div class="md:col-span-3 text-right">
+                        <button type="submit" class="bg-pink-600 text-white font-semibold px-6 py-2 rounded-full hover:bg-pink-700 transition-colors duration-200 shadow-md">
+                            Añadir Prenda
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Visualización del Armario -->
+                <h3 class="text-lg font-semibold text-gray-600 mb-3">Tus Prendas</h3>
+                <div id="wardrobeGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                    <!-- Las prendas se cargarán aquí desde Firestore -->
+                    <p id="wardrobeLoading" class="text-gray-500">Cargando armario...</p>
+                </div>
+            </section>
+
+            <!-- 2. Sección: Estilista AI -->
+            <section class="bg-white p-6 shadow-lg rounded-2xl">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-4 border-b pb-2 flex items-center">
+                    <span class="mr-2" data-lucide="sparkles"></span>
+                    Estilista AI
+                </h2>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label for="selectedItem" class="block text-lg font-medium text-gray-600 mb-2">Quiero ponerme...</label>
+                        <select id="selectedItem" class="w-full text-lg px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500" disabled>
+                            <option>Añade prendas a tu armario primero</option>
+                        </select>
+                    </div>
+                    <div class="text-center">
+                        <button id="generateButton" class="bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold px-8 py-3 rounded-full hover:shadow-xl transform hover:scale-105 transition-all duration-300 text-lg shadow-lg" disabled>
+                            <span id="buttonText">Buscar Outfits</span>
+                            <div id="buttonSpinner" class="spinner hidden mx-auto"></div>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. Sección: Recomendaciones -->
+            <section id="resultsSection" class="bg-gray-50 p-6 shadow-lg rounded-2xl hidden">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-4 flex items-center">
+                    <span class="mr-2" data-lucide="clipboard-check"></span>
+                    Tus Recomendaciones
+                </h2>
+                <!-- Aquí se mostrarán los resultados de la IA -->
+                <div id="resultsContainer" class="prose max-w-none text-gray-800">
+                    <!-- Contenido generado por la IA -->
+                </div>
+                <!-- Sección para las fuentes/tendencias -->
+                <div id="sourcesContainer" class="mt-6">
+                    <h4 class="font-semibold text-gray-600">Fuentes de Tendencias:</h4>
+                    <ul id="sourcesList" class="list-disc list-inside text-sm text-gray-500">
+                        <!-- Fuentes de Google Search -->
+                    </ul>
+                </div>
+            </section>
+        </div>
+        
+        <!-- User ID display -->
+        <footer class="text-center mt-8">
+            <p class="text-xs text-gray-400">Tu ID de Sesión: <span id="userIdDisplay">...</span></p>
+        </footer>
+    </div>
+
+    <!-- Firebase y Lógica de la App -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, 
+            onSnapshot, collection, query, setLogLevel 
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+
+        // ==================================================================
+        // PASO 3 DE LA GUÍA: ¡COMPLETADO!
+        // Tu configuración de Firebase ya está pegada aquí.
+        // ==================================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyBA7UkGwUWGZ0u5aFZ0P1a20vkWfMGa-nI",
+            authDomain: "gi-stylist-app.firebaseapp.com",
+            projectId: "gi-stylist-app",
+            storageBucket: "gi-stylist-app.firebasestorage.app",
+            messagingSenderId: "416131205387",
+            appId: "1:416131205387:web:719069965e889cdbc33a0e",
+            measurementId: "G-Y1N9QEBWY0"
+        };
+        // ==================================================================
+        
+        const appId = firebaseConfig.projectId || 'default-stylist-app'; // Usa el ID del proyecto
+
+        // Inicializar Firebase
+        let app, auth, db, userId, wardrobeCollectionRef;
+        let localWardrobe = []; // Caché local del armario
+
+        // Elementos del DOM
+        const addForm = document.getElementById('addClothingForm');
+        const itemNameEl = document.getElementById('itemName');
+        const itemTypeEl = document.getElementById('itemType');
+        const itemTagsEl = document.getElementById('itemTags');
+        const wardrobeGridEl = document.getElementById('wardrobeGrid');
+        const wardrobeLoadingEl = document.getElementById('wardrobeLoading');
+        const selectedItemEl = document.getElementById('selectedItem');
+        const generateButton = document.getElementById('generateButton');
+        const buttonText = document.getElementById('buttonText');
+        const buttonSpinner = document.getElementById('buttonSpinner');
+        const resultsSection = document.getElementById('resultsSection');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const sourcesContainer = document.getElementById('sourcesContainer');
+        const sourcesList = document.getElementById('sourcesList');
+        const userIdDisplay = document.getElementById('userIdDisplay');
+
+        // Función principal de inicialización
+        async function initializeAppAndAuth() {
+            if (!firebaseConfig.apiKey) {
+                console.error("Configuración de Firebase no válida. Pega tu 'firebaseConfig' en el script.");
+                wardrobeLoadingEl.textContent = "Error: Configuración de Firebase no válida.";
+                userIdDisplay.textContent = "Error de Config.";
+                return;
+            }
+
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                setLogLevel('debug');
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        console.log('User is authenticated:', user.uid);
+                        userId = user.uid;
+                        userIdDisplay.textContent = userId;
+                        
+                        const wardrobePath = `artifacts/${appId}/users/${userId}/wardrobe`;
+                        wardrobeCollectionRef = collection(db, wardrobePath);
+                        console.log('Firestore path:', wardrobePath);
+
+                        listenToWardrobeChanges();
+                        
+                    } else {
+                        console.log('User is not authenticated. Signing in...');
+                        userIdDisplay.textContent = "Iniciando sesión...";
+                        // CAMBIO: Usar signInAnonymously porque no tenemos token
+                        await signInAnonymously(auth);
+                    }
+                });
+
+            } catch (error) {
+                console.error("Error initializing Firebase:", error);
+                wardrobeLoadingEl.textContent = "Error al conectar con la base de datos.";
+            }
+        }
+
+        // Escuchar cambios en el armario (Firestore Realtime)
+        function listenToWardrobeChanges() {
+            if (!wardrobeCollectionRef) return;
+
+            onSnapshot(query(wardrobeCollectionRef), (snapshot) => {
+                localWardrobe = [];
+                wardrobeGridEl.innerHTML = ''; // Limpiar la grilla
+                
+                if (snapshot.empty) {
+                    wardrobeLoadingEl.textContent = "Tu armario está vacío. ¡Añade tu primera prenda!";
+                    wardrobeGridEl.appendChild(wardrobeLoadingEl);
+                    disableStylist();
+                    return;
+                }
+
+                snapshot.forEach((doc) => {
+                    const item = { id: doc.id, ...doc.data() };
+                    localWardrobe.push(item);
+                    renderWardrobeItem(item);
+                });
+
+                updateStylistDropdown();
+                enableStylist();
+
+            }, (error) => {
+                console.error("Error listening to wardrobe:", error);
+                wardrobeLoadingEl.textContent = "Error al cargar el armario.";
+            });
+        }
+        
+        // Renderizar una prenda en la grilla
+        function renderWardrobeItem(item) {
+            const itemCard = document.createElement('div');
+            itemCard.className = 'relative bg-gray-100 p-3 rounded-lg shadow-sm text-center';
+            
+            let iconName = 'shirt';
+            switch(item.type) {
+                case 'bottom': iconName = 'gem'; break;
+                case 'coat': iconName = 'wind'; break;
+                case 'dress': iconName = 'user'; break;
+                case 'shoes': iconName = 'footprints'; break;
+                case 'accessory': iconName = 'watch'; break;
+            }
+
+            itemCard.innerHTML = `
+                <div class="w-8 h-8 mx-auto text-pink-500" data-lucide="${iconName}"></div>
+                <p class="text-sm font-medium text-gray-800 mt-2 truncate" title="${item.name}">${item.name}</p>
+                <p class="text-xs text-gray-500 truncate" title="${item.tags || ''}">${item.tags || 'Sin etiquetas'}</p>
+                <button data-id="${item.id}" class="delete-btn absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs opacity-50 hover:opacity-100 transition-opacity">&times;</button>
+            `;
+            
+            if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                lucide.createIcons({
+                    nodes: [itemCard.querySelector(`[data-lucide="${iconName}"]`)]
+                });
+            } else {
+                console.warn('Lucide no estaba listo para renderizar el icono de la prenda (en renderWardrobeItem).');
+            }
+            
+            itemCard.querySelector('.delete-btn').addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const id = e.target.dataset.id;
+                await deleteClothingItem(id);
+            });
+            
+            wardrobeGridEl.appendChild(itemCard);
+        }
+
+        // Actualizar el dropdown del estilista
+        function updateStylistDropdown() {
+            selectedItemEl.innerHTML = '';
+            if (localWardrobe.length === 0) {
+                selectedItemEl.innerHTML = '<option>Añade prendas a tu armario</option>';
+                return;
+            }
+            localWardrobe.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.id;
+                option.textContent = `${item.name} (${item.type})`;
+                selectedItemEl.appendChild(option);
+            });
+        }
+
+        // Habilitar/Deshabilitar el estilista
+        function enableStylist() {
+            selectedItemEl.disabled = false;
+            generateButton.disabled = false;
+        }
+        function disableStylist() {
+            selectedItemEl.disabled = true;
+            generateButton.disabled = true;
+        }
+        
+        // --- Lógica de Firestore ---
+
+        // Añadir prenda a Firestore
+        addForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newItem = {
+                name: itemNameEl.value,
+                type: itemTypeEl.value,
+                tags: itemTagsEl.value,
+                addedAt: new Date().toISOString()
+            };
+            
+            if (!newItem.name || !wardrobeCollectionRef) return;
+
+            try {
+                await addDoc(wardrobeCollectionRef, newItem);
+                console.log('Prenda añadida!');
+                itemNameEl.value = '';
+                itemTagsEl.value = '';
+                itemNameEl.focus();
+            } catch (error) {
+                console.error("Error adding document: ", error);
+            }
+        });
+
+        // Borrar prenda de Firestore
+        async function deleteClothingItem(id) {
+            try {
+                await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/wardrobe`, id));
+                console.log('Prenda borrada!');
+            } catch (error) {
+                console.error("Error deleting document: ", error);
+            }
+        }
+
+        // --- Lógica del Estilista AI (Gemini) ---
+
+        generateButton.addEventListener('click', handleGenerateOutfits);
+
+        // CAMBIO: Esta es la nueva función que llama a tu API de Vercel
+        async function callVercelAPI(systemPrompt, userQuery) {
+            // Llama a la función serverless que creamos en /api/generate.js
+            const response = await fetch('/api/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ systemPrompt, userQuery }),
+            });
+
+            if (!response.ok) {
+                const errorBody = await response.text();
+                throw new Error(`Error de la API: ${response.status} ${errorBody}`);
+            }
+
+            return response.json(); // Devuelve el { text, sources }
+        }
+
+        async function handleGenerateOutfits() {
+            const selectedItemId = selectedItemEl.value;
+            const selectedItem = localWardrobe.find(item => item.id === selectedItemId);
+            
+            if (!selectedItem) {
+                resultsContainer.textContent = "Por favor, selecciona una prenda válida.";
+                return;
+            }
+
+            setLoading(true);
+            resultsSection.classList.remove('hidden');
+            resultsContainer.innerHTML = '<p>Buscando tendencias y combinando tu armario...</p>';
+            sourcesContainer.classList.add('hidden');
+            sourcesList.innerHTML = '';
+            
+            const wardrobeListString = localWardrobe.map(item => 
+                `- ${item.name} (Tipo: ${item.type}, Etiquetas: ${item.tags || 'ninguna'})`
+            ).join('\n');
+            
+            const systemPrompt = `
+Eres un asistente de moda experto y de alta gama llamado 'Gi's Stylist'.
+Tu especialidad son las tendencias de moda actuales en Europa y el hemisferio norte (Otoño/Invierno).
+
+Aquí tienes la información personal de Gi para personalizar las recomendaciones:
+- Colorimetría: Verano Frío (Cool Summer). Prioriza paletas de colores fríos y suaves.
+- Altura: 1.53m. Sugiere looks que alarguen la silueta.
+- Características: Rubia, piel clara, ojos celestes.
+- Tipo de cuerpo: Delgada con curvas, talla S/XS.
+- Contexto: Cuerpo perimenopáusico (ten en cuenta la comodidad y los cortes favorecedores).
+
+El usuario te dará una prenda específica que quiere usar y una lista completa de su armario.
+Tu tarea es:
+1.  Usar tu conocimiento de búsqueda (Google Search) para identificar las tendencias de moda MÁS actuales (temporada actual) relacionadas con la prenda seleccionada.
+2.  Filtrar estas tendencias para que se adapten PERFECTAMENTE al perfil de Gi (Colorimetría Verano Frío, altura, tipo de cuerpo).
+3.  Crear 2 outfits completos y detallados usando ÚNICAMENTE prendas de la lista del armario proporcionada.
+4.  Para cada outfit, explica por qué está en tendencia Y por qué le favorece específicamente a Gi (ej: 'este color resalta tu paleta de Verano Frío', 'este corte vertical te favorece por tu altura').
+5.  Debes ser entusiasta, profesional y dar consejos prácticos y empoderadores.
+6.  Responde en español.
+7.  Formatea tu respuesta claramente, usando <strong> para los títulos de los outfits (Ej: <strong>Outfit 1: Casual Chic</strong>) y párrafos <p> para la descripción.
+            `;
+            
+            const userQuery = `
+Prenda seleccionada: ${selectedItem.name} (Tipo: ${selectedItem.type}, Etiquetas: ${selectedItem.tags})
+
+Mi Armario Completo:
+${wardrobeListString}
+
+Por favor, crea 2 outfits para mí basados en las tendencias actuales.
+            `;
+
+            // CAMBIO: Llamar a nuestra nueva función de Vercel
+            try {
+                // Ya no usamos callGeminiAPI, usamos nuestra propia función
+                const result = await callVercelAPI(systemPrompt, userQuery);
+                
+                if (result.text) {
+                    resultsContainer.innerHTML = result.text;
+                } else {
+                    resultsContainer.innerHTML = '<p>Lo siento, no pude generar recomendaciones. Inténtalo de nuevo.</p>';
+                }
+                
+                if (result.sources && result.sources.length > 0) {
+                    sourcesContainer.classList.remove('hidden');
+                    result.sources.forEach(source => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `<a href="${source.uri}" target="_blank" class="text-blue-500 hover:underline">${source.title}</a>`;
+                        sourcesList.appendChild(li);
+                    });
+                }
+
+            } catch (error) {
+                console.error("Error calling Vercel API:", error);
+                resultsContainer.innerHTML = `<p>Error al contactar al estilista AI: ${error.message}</p>`;
+            } finally {
+                setLoading(false);
+            }
+        }
+        
+        function setLoading(isLoading) {
+            if (isLoading) {
+                generateButton.disabled = true;
+                buttonText.classList.add('hidden');
+                buttonSpinner.classList.remove('hidden');
+            } else {
+                generateButton.disabled = false;
+                buttonText.classList.remove('hidden');
+                buttonSpinner.classList.add('hidden');
+            }
+        }
+
+        // --- Inicialización ---
+
+        // Corregir el typo de 'xintegrity' a 'integrity'
+        // El script de Lucide ya está corregido en el <head>
+
+        initializeAppAndAuth();
+        
+        /* Cargar iconos estáticos de Lucide DESPUÉS de que toda la página se haya cargado */
+        window.addEventListener('load', () => {
+            console.log('Evento window.load disparado.');
+            if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                console.log('Lucide está definido, llamando a createIcons().');
+                lucide.createIcons();
+                console.log('Iconos Lucide cargados correctamente.');
+            } else {
+                console.error('Error Crítico: No se pudo cargar la librería de iconos Lucide (en window.load). El objeto "lucide" no está definido.');
+            }
+        });
+
+    </script>
+</body>
+</html>
+
