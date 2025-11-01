@@ -10,8 +10,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Iconos (Lucide) - CORREGIDO (URL correcta de JSdelivr) -->
+    <!-- Iconos (Lucide) -->
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.378.0/dist/umd/lucide.min.js"></script>
+    <!-- NUEVO: Librería para convertir Markdown a HTML -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <style>
         body {
@@ -32,6 +34,23 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* Estilos para el contenido generado por IA */
+        .prose strong {
+            font-weight: 600;
+        }
+        .prose p {
+            margin-bottom: 1rem;
+        }
+        .prose ul {
+            list-style: disc;
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .prose li {
+            margin-bottom: 0.25rem;
+        }
+
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen p-4 md:p-8">
@@ -396,6 +415,7 @@
                 `- ${item.name} (Tipo: ${item.type}, Etiquetas: ${item.tags || 'ninguna'})`
             ).join('\n');
             
+            // CAMBIO: System prompt actualizado para pedir Markdown, ya que ahora lo parseamos.
             const systemPrompt = `
 Eres un asistente de moda experto y de alta gama llamado 'Gi's Stylist'.
 Tu especialidad son las tendencias de moda actuales en Europa y el hemisferio norte (Otoño/Invierno).
@@ -415,7 +435,7 @@ Tu tarea es:
 4.  Para cada outfit, explica por qué está en tendencia Y por qué le favorece específicamente a Gi (ej: 'este color resalta tu paleta de Verano Frío', 'este corte vertical te favorece por tu altura').
 5.  Debes ser entusiasta, profesional y dar consejos prácticos y empoderadores.
 6.  Responde en español.
-7.  Formatea tu respuesta claramente, usando <strong> para los títulos de los outfits (Ej: <strong>Outfit 1: Casual Chic</strong>) y párrafos <p> para la descripción.
+7.  Formatea tu respuesta claramente usando Markdown (por ejemplo, usando ** para negrita, * para itálicos, y saltos de línea para párrafos).
             `;
             
             const userQuery = `
@@ -433,7 +453,8 @@ Por favor, crea 2 outfits para mí basados en las tendencias actuales.
                 const result = await callVercelAPI(systemPrompt, userQuery);
                 
                 if (result.text) {
-                    resultsContainer.innerHTML = result.text;
+                    // CAMBIO: Usar marked.parse() para convertir Markdown a HTML
+                    resultsContainer.innerHTML = marked.parse(result.text);
                 } else {
                     resultsContainer.innerHTML = '<p>Lo siento, no pude generar recomendaciones. Inténtalo de nuevo.</p>';
                 }
