@@ -1,0 +1,12 @@
+{
+  "name": "gi-stylist-backend",
+  "version": "1.0.0",
+  "description": "Función de Vercel para llamar a Gemini",
+  "main": "api/generate.js",
+  "scripts": {
+    "start": "node api/generate.js"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.15.0"
+  }
+}
