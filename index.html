@@ -12,7 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Iconos (Lucide) -->
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.378.0/dist/umd/lucide.min.js"></script>
-    <!-- NUEVO: Librería para convertir Markdown a HTML -->
+    <!-- Librería para convertir Markdown a HTML -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <style>
@@ -27,6 +27,12 @@
             border-top: 4px solid #ffffff;
             width: 24px;
             height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        .form-spinner {
+            border-top-color: #db2777; /* pink-600 */
+            width: 20px;
+            height: 20px;
             animation: spin 1s linear infinite;
         }
 
@@ -50,6 +56,29 @@
         .prose li {
             margin-bottom: 0.25rem;
         }
+        
+        /* Estilo para la tarjeta de imagen */
+        .wardrobe-card-image {
+            aspect-ratio: 1 / 1;
+            width: 100%;
+            object-fit: cover;
+            border-radius: 0.5rem; /* rounded-lg */
+            margin-bottom: 0.75rem; /* mb-3 */
+        }
+        .wardrobe-card-icon {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f3f4f6; /* bg-gray-100 */
+            border-radius: 0.5rem; /* rounded-lg */
+            margin-bottom: 0.75rem; /* mb-3 */
+        }
+        .wardrobe-card-icon > div {
+            width: 40%;
+            height: 40%;
+        }
 
     </style>
 </head>
@@ -72,7 +101,7 @@
                     Mi Armario
                 </h2>
                 
-                <form id="addClothingForm" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 items-end">
+                <form id="addClothingForm" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 items-end">
                     <div>
                         <label for="itemName" class="block text-sm font-medium text-gray-600 mb-1">Nombre Prenda</label>
                         <input type="text" id="itemName" placeholder="Ej: Falda de cuero negra" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500" required>
@@ -92,18 +121,29 @@
                         <label for="itemTags" class="block text-sm font-medium text-gray-600 mb-1">Etiquetas (separadas por coma)</label>
                         <input type="text" id="itemTags" placeholder="Ej: casual, cuero, rockero" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500">
                     </div>
-                    <div class="md:col-span-3 text-right">
-                        <button type="submit" class="bg-pink-600 text-white font-semibold px-6 py-2 rounded-full hover:bg-pink-700 transition-colors duration-200 shadow-md">
-                            Añadir Prenda
+                     <div>
+                        <label for="itemImage" class="block text-sm font-medium text-gray-600 mb-1">Foto (Opcional)</label>
+                        <input type="file" id="itemImage" accept="image/*" class="w-full text-sm text-gray-500
+                            file:mr-4 file:py-2 file:px-4
+                            file:rounded-full file:border-0
+                            file:text-sm file:font-semibold
+                            file:bg-pink-50 file:text-pink-700
+                            hover:file:bg-pink-100
+                        ">
+                    </div>
+                    <div class="md:col-span-2 text-right">
+                        <button type="submit" id="addFormButton" class="bg-pink-600 text-white font-semibold px-6 py-2 rounded-full hover:bg-pink-700 transition-colors duration-200 shadow-md flex items-center justify-center ml-auto">
+                            <span id="addFormButtonText">Añadir Prenda</span>
+                            <div id="addFormSpinner" class="form-spinner hidden ml-2"></div>
                         </button>
                     </div>
                 </form>
 
                 <!-- Visualización del Armario -->
                 <h3 class="text-lg font-semibold text-gray-600 mb-3">Tus Prendas</h3>
-                <div id="wardrobeGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                <div id="wardrobeGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                     <!-- Las prendas se cargarán aquí desde Firestore -->
-                    <p id="wardrobeLoading" class="text-gray-500">Cargando armario...</p>
+                    <p id="wardrobeLoading" class="text-gray-500 col-span-full">Cargando armario...</p>
                 </div>
             </section>
 
@@ -159,11 +199,15 @@
     <!-- Firebase y Lógica de la App -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged }. from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { 
             getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, 
             onSnapshot, collection, query, setLogLevel 
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        // NUEVOS Imports para Storage
+        import { 
+            getStorage, ref, uploadBytes, getDownloadURL 
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
 
         // ==================================================================
@@ -171,17 +215,17 @@
         // Tu configuración de Firebase ya está pegada aquí.
         // ==================================================================
         const firebaseConfig = {
-           apiKey: "AIzaSyDkpf_AjxhT3ZaOvKkEwG7mxH59vgiumAo",
-  authDomain: "armaria-b1fcf.firebaseapp.com",
-  projectId: "armaria-b1fcf",
-  storageBucket: "armaria-b1fcf.firebasestorage.app",
-  messagingSenderId: "3898561277",
-  appId: "1:3898561277:web:1dd32fdb2e16fb58c02494",
-  measurementId: "G-3TT1YZZN2T"
+            apiKey: "AIzaSyDkpf_AjxhT3ZaOvKkEwG7mxH59vgiumAo",
+            authDomain: "armaria-b1fcf.firebaseapp.com",
+            projectId: "armaria-b1fcf",
+            storageBucket: "armaria-b1fcf.firebasestorage.app",
+            messagingSenderId: "3898561277",
+            appId: "1:3898561277:web:1dd32fdb2e16fb58c02494",
+            measurementId: "G-3TT1YZZN2T"
         };
         // ==================================================================
 
-        // CAMBIO: Configurar marked.js para que respete los saltos de línea (breaks)
+        // Configurar marked.js para que respete los saltos de línea (breaks)
         if (typeof marked !== 'undefined') {
             marked.setOptions({
                 breaks: true, // Interpreta \n como <br>
@@ -193,13 +237,280 @@
         const appId = firebaseConfig.projectId || 'default-stylist-app'; // Usa el ID del proyecto
 
         // Inicializar Firebase
-        let app, auth, db, userId, wardrobeCollectionRef;
+        let app, auth, db, storage, userId, wardrobeCollectionRef; // Añadido `storage`
         let localWardrobe = []; // Caché local del armario
 
         // Elementos del DOM
         const addForm = document.getElementById('addClothingForm');
-        // ... (resto de elementos del DOM)
-// ... (código existente sin cambios) ...
+        const itemNameEl = document.getElementById('itemName');
+        const itemTypeEl = document.getElementById('itemType');
+        const itemTagsEl = document.getElementById('itemTags');
+        const itemImageEl = document.getElementById('itemImage'); // Nuevo
+        const addFormButton = document.getElementById('addFormButton'); // Nuevo
+        const addFormButtonText = document.getElementById('addFormButtonText'); // Nuevo
+        const addFormSpinner = document.getElementById('addFormSpinner'); // Nuevo
+        
+        const wardrobeGridEl = document.getElementById('wardrobeGrid');
+        const wardrobeLoadingEl = document.getElementById('wardrobeLoading');
+        const selectedItemEl = document.getElementById('selectedItem');
+        const generateButton = document.getElementById('generateButton');
+        const buttonText = document.getElementById('buttonText');
+        const buttonSpinner = document.getElementById('buttonSpinner');
+        const resultsSection = document.getElementById('resultsSection');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const sourcesContainer = document.getElementById('sourcesContainer');
+        const sourcesList = document.getElementById('sourcesList');
+        const userIdDisplay = document.getElementById('userIdDisplay');
+
+        // Función principal de inicialización
+        async function initializeAppAndAuth() {
+            if (!firebaseConfig.apiKey) {
+                console.error("Configuración de Firebase no válida. Pega tu 'firebaseConfig' en el script.");
+                wardrobeLoadingEl.textContent = "Error: Configuración de Firebase no válida.";
+                userIdDisplay.textContent = "Error de Config.";
+                return;
+            }
+
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                storage = getStorage(app); // NUEVO: Inicializar Storage
+                setLogLevel('debug');
+                console.log("Firebase App, Auth, Firestore y Storage inicializados.");
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        console.log('User is authenticated:', user.uid);
+                        userId = user.uid;
+                        userIdDisplay.textContent = userId;
+                        
+                        const wardrobePath = `artifacts/${appId}/users/${userId}/wardrobe`;
+                        wardrobeCollectionRef = collection(db, wardrobePath);
+                        console.log('Firestore path:', wardrobePath);
+
+                        listenToWardrobeChanges();
+                        
+                    } else {
+                        console.log('User is not authenticated. Signing in...');
+                        userIdDisplay.textContent = "Iniciando sesión...";
+                        await signInAnonymously(auth);
+                    }
+                });
+
+            } catch (error) {
+                console.error("Error initializing Firebase:", error);
+                wardrobeLoadingEl.textContent = "Error al conectar con la base de datos.";
+            }
+        }
+
+        // Escuchar cambios en el armario (Firestore Realtime)
+        function listenToWardrobeChanges() {
+            if (!wardrobeCollectionRef) return;
+
+            onSnapshot(query(wardrobeCollectionRef), (snapshot) => {
+                localWardrobe = [];
+                wardrobeGridEl.innerHTML = ''; // Limpiar la grilla
+                
+                if (snapshot.empty) {
+                    const p = document.createElement('p');
+                    p.textContent = "Tu armario está vacío. ¡Añade tu primera prenda!";
+                    p.className = "text-gray-500 col-span-full";
+                    wardrobeGridEl.appendChild(p);
+                    disableStylist();
+                    return;
+                }
+
+                snapshot.forEach((doc) => {
+                    const item = { id: doc.id, ...doc.data() };
+                    localWardrobe.push(item);
+                    renderWardrobeItem(item);
+                });
+
+                updateStylistDropdown();
+                enableStylist();
+
+            }, (error) => {
+                console.error("Error listening to wardrobe:", error);
+                wardrobeLoadingEl.textContent = "Error al cargar el armario.";
+            });
+        }
+        
+        // Renderizar una prenda en la grilla (ACTUALIZADO para mostrar imagen)
+        function renderWardrobeItem(item) {
+            const itemCard = document.createElement('div');
+            itemCard.className = 'relative bg-white p-2 rounded-lg shadow-sm text-center border border-gray-200';
+            
+            let imageOrIconHtml = '';
+            
+            if (item.imageUrl) {
+                // Si hay imagen, mostrarla
+                imageOrIconHtml = `<img src="${item.imageUrl}" alt="${item.name}" class="wardrobe-card-image">`;
+            } else {
+                // Si NO hay imagen, mostrar icono
+                let iconName = 'shirt';
+                switch(item.type) {
+                    case 'bottom': iconName = 'gem'; break;
+                    case 'coat': iconName = 'wind'; break;
+                    case 'dress': iconName = 'user'; break;
+                    case 'shoes': iconName = 'footprints'; break;
+                    case 'accessory': iconName = 'watch'; break;
+                }
+                imageOrIconHtml = `
+                    <div class="wardrobe-card-icon">
+                        <div class="w-full h-full text-pink-500" data-lucide="${iconName}"></div>
+                    </div>
+                `;
+            }
+
+            itemCard.innerHTML = `
+                ${imageOrIconHtml}
+                <p class="text-sm font-medium text-gray-800 mt-1 truncate" title="${item.name}">${item.name}</p>
+                <p class="text-xs text-gray-500 truncate" title="${item.tags || ''}">${item.tags || 'Sin etiquetas'}</p>
+                <button data-id="${item.id}" class="delete-btn absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs opacity-50 hover:opacity-100 transition-opacity">&times;</button>
+            `;
+            
+            if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                const iconEl = itemCard.querySelector(`[data-lucide]`);
+                if (iconEl) {
+                    lucide.createIcons({ nodes: [iconEl] });
+                }
+            }
+            
+            itemCard.querySelector('.delete-btn').addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const id = e.target.dataset.id;
+                // Aquí también deberíamos borrar la imagen de Storage, pero
+                // por simplicidad primero solo borramos el doc de Firestore.
+                await deleteClothingItem(id);
+            });
+            
+            wardrobeGridEl.appendChild(itemCard);
+        }
+
+        // Actualizar el dropdown del estilista
+        function updateStylistDropdown() {
+            selectedItemEl.innerHTML = '';
+            if (localWardrobe.length === 0) {
+                selectedItemEl.innerHTML = '<option>Añade prendas a tu armario</option>';
+                return;
+            }
+            localWardrobe.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.id;
+                option.textContent = `${item.name} (${item.type})`;
+                selectedItemEl.appendChild(option);
+            });
+        }
+
+        // Habilitar/Deshabilitar el estilista
+        function enableStylist() {
+            selectedItemEl.disabled = false;
+            generateButton.disabled = false;
+        }
+        function disableStylist() {
+            selectedItemEl.disabled = true;
+            generateButton.disabled = true;
+        }
+
+        function setFormLoading(isLoading) {
+            if (isLoading) {
+                addFormButton.disabled = true;
+                addFormButtonText.classList.add('hidden');
+                addFormSpinner.classList.remove('hidden');
+            } else {
+                addFormButton.disabled = false;
+                addFormButtonText.classList.remove('hidden');
+                addFormSpinner.classList.add('hidden');
+            }
+        }
+        
+        // --- Lógica de Firestore ---
+
+        // Añadir prenda a Firestore (ACTUALIZADO para subir imagen)
+        addForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const file = itemImageEl.files[0];
+            const itemName = itemNameEl.value;
+            
+            if (!itemName || !wardrobeCollectionRef) return;
+
+            setFormLoading(true);
+            
+            let imageUrl = null;
+
+            try {
+                // 1. Subir la imagen si existe
+                if (file) {
+                    const storagePath = `artifacts/${appId}/users/${userId}/images/${Date.now()}_${file.name}`;
+                    const storageRef = ref(storage, storagePath);
+                    
+                    console.log(`Subiendo imagen a: ${storagePath}`);
+                    const snapshot = await uploadBytes(storageRef, file);
+                    imageUrl = await getDownloadURL(snapshot.ref);
+                    console.log('Imagen subida, URL:', imageUrl);
+                }
+
+                // 2. Crear el objeto de la prenda
+                const newItem = {
+                    name: itemName,
+                    type: itemTypeEl.value,
+                    tags: itemTagsEl.value,
+                    addedAt: new Date().toISOString(),
+                    imageUrl: imageUrl // Guardar la URL (o null)
+                };
+
+                // 3. Guardar en Firestore
+                await addDoc(wardrobeCollectionRef, newItem);
+                console.log('Prenda añadida a Firestore!');
+                
+                // 4. Limpiar formulario
+                itemNameEl.value = '';
+                itemTagsEl.value = '';
+                itemImageEl.value = null; // Limpiar el input de archivo
+                itemNameEl.focus();
+
+            } catch (error) {
+                console.error("Error adding document or uploading image: ", error);
+                alert("Error al añadir la prenda. Revisa la consola."); // Reemplazar por modal
+            } finally {
+                setFormLoading(false);
+            }
+        });
+
+        // Borrar prenda de Firestore
+        async function deleteClothingItem(id) {
+            // TODO: Borrar también la imagen de Storage
+            try {
+                await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/wardrobe`, id));
+                console.log('Prenda borrada!');
+            } catch (error) {
+                console.error("Error deleting document: ", error);
+            }
+        }
+
+        // --- Lógica del Estilista AI (Gemini) ---
+
+        generateButton.addEventListener('click', handleGenerateOutfits);
+
+        // Llamar a la API de Vercel
+        async function callVercelAPI(systemPrompt, userQuery) {
+            const response = await fetch('/api/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ systemPrompt, userQuery }),
+            });
+
+            if (!response.ok) {
+                const errorBody = await response.text();
+                throw new Error(`Error de la API: ${response.status} ${errorBody}`);
+            }
+
+            return response.json(); // Devuelve el { text, sources }
+        }
 
         async function handleGenerateOutfits() {
             const selectedItemId = selectedItemEl.value;
@@ -217,10 +528,9 @@
             sourcesList.innerHTML = '';
             
             const wardrobeListString = localWardrobe.map(item => 
-                `- ${item.name} (Tipo: ${item.type}, Etiquetas: ${item.tags || 'ninguna'})`
+                `- ${item.name} (Tipo: ${item.type}, Etiquetas: ${item.tags || 'ninguna'}, Imagen: ${item.imageUrl ? 'Sí' : 'No'})`
             ).join('\n');
             
-            // CAMBIO: System prompt actualizado para pedir Markdown, ya que ahora lo parseamos.
             const systemPrompt = `
 Eres un asistente de moda experto y de alta gama llamado 'Gi's Stylist'.
 Tu especialidad son las tendencias de moda actuales en Europa y el hemisferio norte (Otoño/Invierno).
@@ -244,7 +554,7 @@ Tu tarea es:
             `;
             
             const userQuery = `
-Prenda seleccionada: ${selectedItem.name} (Tipo: ${selectedItem.type}, Etiquetas: ${selectedItem.tags})
+Prenda seleccionada: ${selectedItem.name} (Tipo: ${selectedItem.type}, Etiquetas: ${selectedItem.tags}, Imagen: ${selectedItem.imageUrl ? 'Sí' : 'No'})
 
 Mi Armario Completo:
 ${wardrobeListString}
@@ -252,14 +562,10 @@ ${wardrobeListString}
 Por favor, crea 2 outfits para mí basados en las tendencias actuales.
             `;
 
-            // CAMBIO: Llamar a nuestra nueva función de Vercel
             try {
-                // Ya no usamos callGeminiAPI, usamos nuestra propia función
                 const result = await callVercelAPI(systemPrompt, userQuery);
                 
                 if (result.text) {
-                    // CAMBIO: Usar marked.parse() para convertir Markdown a HTML
-                    // La configuración de "breaks: true" que hicimos antes se aplicará aquí.
                     resultsContainer.innerHTML = marked.parse(result.text);
                 } else {
                     resultsContainer.innerHTML = '<p>Lo siento, no pude generar recomendaciones. Inténtalo de nuevo.</p>';
@@ -282,9 +588,35 @@ Por favor, crea 2 outfits para mí basados en las tendencias actuales.
             }
         }
         
-// ... (código existente sin cambios) ...
+        function setLoading(isLoading) {
+            if (isLoading) {
+                generateButton.disabled = true;
+                buttonText.classList.add('hidden');
+                buttonSpinner.classList.remove('hidden');
+            } else {
+                generateButton.disabled = false;
+                buttonText.classList.remove('hidden');
+                buttonSpinner.classList.add('hidden');
+            }
+        }
+
+        // --- Inicialización ---
+        
+        initializeAppAndAuth();
+        
+        /* Cargar iconos estáticos de Lucide DESPUÉS de que toda la página se haya cargado */
+        window.addEventListener('load', () => {
+            console.log('Evento window.load disparado.');
+            if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                console.log('Lucide está definido, llamando a createIcons().');
+                lucide.createIcons();
+                console.log('Iconos Lucide cargados correctamente.');
+            } else {
+                console.error('Error Crítico: No se pudo cargar la librería de iconos Lucide (en window.load). El objeto "lucide" no está definido.');
+            }
+        });
+
     </script>
 </body>
 </html>
-
 
